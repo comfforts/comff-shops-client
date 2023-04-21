@@ -3,7 +3,7 @@ module github.com/comfforts/comff-shops-client
 go 1.20
 
 require (
-	github.com/comfforts/comff-shops v1.1.17
+	github.com/comfforts/comff-shops v1.1.18
 	github.com/comfforts/errors v0.1.1
 	github.com/comfforts/logger v0.1.13
 	github.com/stretchr/testify v1.8.1
