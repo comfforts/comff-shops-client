@@ -4,16 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	comffC "github.com/comfforts/comff-constants"
 	api "github.com/comfforts/comff-shops/api/v1"
 	"github.com/comfforts/logger"
-	"github.com/stretchr/testify/require"
 )
 
 const TEST_DIR = "data"
-
-const P94952 = "94952"
-const PETALUMA = "Petaluma"
-const US = "US"
 
 func TestShopsClient(t *testing.T) {
 	logger := logger.NewTestAppLogger(TEST_DIR)
@@ -56,9 +54,9 @@ func testShopCRUD(t *testing.T, sc Client) {
 		Name:        name,
 		Org:         org,
 		StoreId:     uint64(storeId),
-		City:        PETALUMA,
-		PostalCode:  P94952,
-		Country:     US,
+		City:        comffC.PETALUMA,
+		PostalCode:  comffC.P94952,
+		Country:     comffC.US,
 		RequestedBy: rqstr,
 	}
 
