@@ -62,8 +62,8 @@ type shopClient struct {
 
 func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, error) {
 	tlsConfig, err := config.SetupTLSConfig(config.TLSConfig{
-		CertFile: config.CertFile(config.ClientCertFile),
-		KeyFile:  config.CertFile(config.ClientKeyFile),
+		CertFile: config.CertFile(config.ShopClientCertFile),
+		KeyFile:  config.CertFile(config.ShopClientKeyFile),
 		CAFile:   config.CertFile(config.CAFile),
 		Server:   false,
 	})

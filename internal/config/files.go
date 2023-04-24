@@ -6,11 +6,9 @@ import (
 )
 
 const (
-	CAFile         = "ca.pem"
-	ServerCertFile = "server.pem"
-	ServerKeyFile  = "server-key.pem"
-	ClientCertFile = "client.pem"
-	ClientKeyFile  = "client-key.pem"
+	CAFile             = "ca.pem"
+	ShopClientCertFile = "shop-client.pem"
+	ShopClientKeyFile  = "shop-client-key.pem"
 )
 
 type FileType string

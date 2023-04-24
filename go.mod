@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/comfforts/comff-constants v0.0.11
-	github.com/comfforts/comff-shops v1.1.20
+	github.com/comfforts/comff-shops v1.1.21
 	github.com/comfforts/errors v0.1.1
 	github.com/comfforts/logger v0.1.13
 	github.com/stretchr/testify v1.8.1
