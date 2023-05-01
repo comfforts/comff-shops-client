@@ -3,16 +3,19 @@ module github.com/comfforts/comff-shops-client
 go 1.20
 
 require (
+	github.com/comfforts/comff-config v0.0.14
 	github.com/comfforts/comff-constants v0.0.11
-	github.com/comfforts/comff-shops v1.1.22
-	github.com/comfforts/errors v0.1.1
+	github.com/comfforts/comff-shops v1.1.23
 	github.com/comfforts/logger v0.1.13
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	go.uber.org/zap v1.24.0
 	google.golang.org/grpc v1.54.0
 )
 
 require (
+	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible // indirect
+	github.com/casbin/casbin v1.9.1 // indirect
+	github.com/comfforts/errors v0.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

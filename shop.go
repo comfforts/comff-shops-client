@@ -3,20 +3,20 @@ package shop
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	config "github.com/comfforts/comff-config"
 	api "github.com/comfforts/comff-shops/api/v1"
 	"github.com/comfforts/logger"
-
-	"github.com/comfforts/comff-shops-client/internal/config"
 )
 
-const SERVICE_PORT = 52051
-const SERVICE_DOMAIN = "127.0.0.1"
+const DEFAULT_SERVICE_PORT = "52051"
+const DEFAULT_SERVICE_HOST = "127.0.0.1"
 
 type ContextKey string
 
@@ -61,12 +61,7 @@ type shopClient struct {
 }
 
 func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, error) {
-	tlsConfig, err := config.SetupTLSConfig(config.TLSConfig{
-		CertFile: config.CertFile(config.ShopClientCertFile),
-		KeyFile:  config.CertFile(config.ShopClientKeyFile),
-		CAFile:   config.CertFile(config.CAFile),
-		Server:   false,
-	})
+	tlsConfig, err := config.SetupTLSConfig(&config.ConfigOpts{Target: config.SHOP_CLIENT})
 	if err != nil {
 		logger.Error("error setting shops client TLS", zap.Error(err))
 		return nil, err
@@ -76,7 +71,16 @@ func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, 
 		grpc.WithTransportCredentials(tlsCreds),
 	}
 
-	serviceAddr := fmt.Sprintf("%s:%d", SERVICE_DOMAIN, SERVICE_PORT)
+	servicePort := os.Getenv("SHOP_SERVICE_PORT")
+	if servicePort == "" {
+		servicePort = DEFAULT_SERVICE_PORT
+	}
+	serviceHost := os.Getenv("SHOP_SERVICE_HOST")
+	if serviceHost == "" {
+		serviceHost = DEFAULT_SERVICE_HOST
+	}
+
+	serviceAddr := fmt.Sprintf("%s:%s", serviceHost, servicePort)
 	// with load balancer
 	// serviceAddr = fmt.Sprintf("%s:///%s", loadbalance.ShopResolverName, serviceAddr)
 	// serviceAddr = fmt.Sprintf("%s:///%s", "shops", serviceAddr)
