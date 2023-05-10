@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 
 	config "github.com/comfforts/comff-config"
 	api "github.com/comfforts/comff-shops/api/v1"
@@ -36,6 +37,7 @@ type ClientOption struct {
 	DialTimeout      time.Duration
 	KeepAlive        time.Duration
 	KeepAliveTimeout time.Duration
+	Caller           string
 }
 
 type Client interface {
@@ -58,6 +60,7 @@ type shopClient struct {
 	logger logger.AppLogger
 	client api.ShopsClient
 	conn   *grpc.ClientConn
+	opts   *ClientOption
 }
 
 func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, error) {
@@ -97,11 +100,12 @@ func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, 
 		client: client,
 		logger: logger,
 		conn:   conn,
+		opts:   clientOpts,
 	}, nil
 }
 
 func (sc *shopClient) AddShop(ctx context.Context, req *api.AddShopRequest, opts ...grpc.CallOption) (*api.AddShopResponse, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := sc.contextWithOptions(ctx, sc.opts)
 	defer cancel()
 
 	resp, err := sc.client.AddShop(ctx, req)
@@ -113,7 +117,7 @@ func (sc *shopClient) AddShop(ctx context.Context, req *api.AddShopRequest, opts
 }
 
 func (sc *shopClient) GetShop(ctx context.Context, req *api.GetShopRequest, opts ...grpc.CallOption) (*api.GetShopResponse, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := sc.contextWithOptions(ctx, sc.opts)
 	defer cancel()
 
 	resp, err := sc.client.GetShop(ctx, req)
@@ -125,7 +129,7 @@ func (sc *shopClient) GetShop(ctx context.Context, req *api.GetShopRequest, opts
 }
 
 func (sc *shopClient) DeleteShop(ctx context.Context, req *api.DeleteShopRequest, opts ...grpc.CallOption) (*api.DeleteResponse, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := sc.contextWithOptions(ctx, sc.opts)
 	defer cancel()
 
 	resp, err := sc.client.DeleteShop(ctx, req)
@@ -137,7 +141,7 @@ func (sc *shopClient) DeleteShop(ctx context.Context, req *api.DeleteShopRequest
 }
 
 func (sc *shopClient) GetShops(ctx context.Context, req *api.SearchShopsRequest, opts ...grpc.CallOption) (*api.SearchShopsResponse, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := sc.contextWithOptions(ctx, sc.opts)
 	defer cancel()
 
 	resp, err := sc.client.SearchShops(ctx, req)
@@ -154,4 +158,14 @@ func (sc *shopClient) Close() error {
 		return err
 	}
 	return nil
+}
+
+func (sc *shopClient) contextWithOptions(ctx context.Context, opts *ClientOption) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(ctx, sc.opts.DialTimeout)
+	if sc.opts.Caller != "" {
+		md := metadata.New(map[string]string{"service-client": sc.opts.Caller})
+		ctx = metadata.NewOutgoingContext(ctx, md)
+	}
+
+	return ctx, cancel
 }

@@ -37,7 +37,10 @@ func setup(t *testing.T, logger logger.AppLogger) (
 ) {
 	t.Helper()
 
-	gc, err := NewClient(logger, NewDefaultClientOption())
+	clientOpts := NewDefaultClientOption()
+	clientOpts.Caller = "shop-client-test"
+
+	gc, err := NewClient(logger, clientOpts)
 	require.NoError(t, err)
 
 	return gc, func() {

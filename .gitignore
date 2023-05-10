@@ -4,3 +4,5 @@ vendor
 data
 certs
 go.sum
+
+env
