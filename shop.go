@@ -65,15 +65,16 @@ type shopClient struct {
 }
 
 func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, error) {
-	tlsConfig, err := config.SetupTLSConfig(&config.ConfigOpts{Target: config.SHOP_CLIENT})
 	if clientOpts.Caller == "" {
 		clientOpts.Caller = DefaultClientName
 	}
 
+	tlsConfig, err := config.SetupTLSConfig(&config.ConfigOpts{Target: config.SHOP_CLIENT})
 	if err != nil {
 		logger.Error("error setting shops client TLS", zap.Error(err), zap.String("client", clientOpts.Caller))
 		return nil, err
 	}
+
 	tlsCreds := credentials.NewTLS(tlsConfig)
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(tlsCreds),
