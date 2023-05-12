@@ -32,6 +32,7 @@ var (
 )
 
 const ShopClientContextKey = ContextKey("shop-client")
+const DefaultClientName = "comfforts-shops-client"
 
 type ClientOption struct {
 	DialTimeout      time.Duration
@@ -65,8 +66,12 @@ type shopClient struct {
 
 func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, error) {
 	tlsConfig, err := config.SetupTLSConfig(&config.ConfigOpts{Target: config.SHOP_CLIENT})
+	if clientOpts.Caller == "" {
+		clientOpts.Caller = DefaultClientName
+	}
+
 	if err != nil {
-		logger.Error("error setting shops client TLS", zap.Error(err))
+		logger.Error("error setting shops client TLS", zap.Error(err), zap.String("client", clientOpts.Caller))
 		return nil, err
 	}
 	tlsCreds := credentials.NewTLS(tlsConfig)
@@ -90,7 +95,7 @@ func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, 
 
 	conn, err := grpc.Dial(serviceAddr, opts...)
 	if err != nil {
-		logger.Error("shop client failed to connect", zap.Error(err))
+		logger.Error("shop client failed to connect", zap.Error(err), zap.String("client", clientOpts.Caller))
 		return nil, err
 	}
 
