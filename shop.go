@@ -90,12 +90,12 @@ func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, 
 
 	conn, err := grpc.Dial(serviceAddr, opts...)
 	if err != nil {
-		logger.Error("client failed to connect", zap.Error(err))
+		logger.Error("shop client failed to connect", zap.Error(err))
 		return nil, err
 	}
 
 	client := api.NewShopsClient(conn)
-
+	logger.Info("shop client connected", zap.String("host", serviceHost), zap.String("port", servicePort))
 	return &shopClient{
 		client: client,
 		logger: logger,
