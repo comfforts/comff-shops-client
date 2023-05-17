@@ -3,9 +3,9 @@ module github.com/comfforts/comff-shops-client
 go 1.20
 
 require (
-	github.com/comfforts/comff-config v0.0.14
+	github.com/comfforts/comff-config v0.0.16
 	github.com/comfforts/comff-constants v0.0.11
-	github.com/comfforts/comff-shops v1.1.31
+	github.com/comfforts/comff-shops v1.1.32
 	github.com/comfforts/logger v0.1.13
 	github.com/stretchr/testify v1.8.2
 	go.uber.org/zap v1.24.0
