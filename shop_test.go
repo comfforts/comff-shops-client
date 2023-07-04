@@ -57,6 +57,7 @@ func testShopCRUD(t *testing.T, sc Client) {
 		Name:        name,
 		Org:         org,
 		StoreId:     uint64(storeId),
+		Street:      "212 2nd St",
 		City:        comffC.PETALUMA,
 		PostalCode:  comffC.P94952,
 		Country:     comffC.US,
