@@ -14,6 +14,8 @@ import (
 	config "github.com/comfforts/comff-config"
 	api "github.com/comfforts/comff-shops/api/v1"
 	"github.com/comfforts/logger"
+
+	"github.com/comfforts/comff-shops-client/internal/loadbalance"
 )
 
 const DEFAULT_SERVICE_PORT = "52051"
@@ -46,6 +48,8 @@ type Client interface {
 	GetShop(ctx context.Context, req *api.GetShopRequest, opts ...grpc.CallOption) (*api.GetShopResponse, error)
 	DeleteShop(ctx context.Context, req *api.DeleteShopRequest, opts ...grpc.CallOption) (*api.DeleteResponse, error)
 	GetShops(ctx context.Context, req *api.SearchShopsRequest, opts ...grpc.CallOption) (*api.SearchShopsResponse, error)
+	UpdateShop(ctx context.Context, req *api.UpdateShopRequest, opts ...grpc.CallOption) (*api.UpdateShopResponse, error)
+	GetServers(ctx context.Context, req *api.GetServersRequest, opts ...grpc.CallOption) (*api.GetServersResponse, error)
 	Close() error
 }
 
@@ -58,26 +62,15 @@ func NewDefaultClientOption() *ClientOption {
 }
 
 type shopClient struct {
-	logger logger.AppLogger
+	logger.AppLogger
 	client api.ShopsClient
 	conn   *grpc.ClientConn
 	opts   *ClientOption
 }
 
-func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, error) {
+func NewClient(l logger.AppLogger, clientOpts *ClientOption) (*shopClient, error) {
 	if clientOpts.Caller == "" {
 		clientOpts.Caller = DefaultClientName
-	}
-
-	tlsConfig, err := config.SetupTLSConfig(&config.ConfigOpts{Target: config.SHOP_CLIENT})
-	if err != nil {
-		logger.Error("error setting shops client TLS", zap.Error(err), zap.String("client", clientOpts.Caller))
-		return nil, err
-	}
-
-	tlsCreds := credentials.NewTLS(tlsConfig)
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(tlsCreds),
 	}
 
 	servicePort := os.Getenv("SHOP_SERVICE_PORT")
@@ -91,22 +84,35 @@ func NewClient(logger logger.AppLogger, clientOpts *ClientOption) (*shopClient, 
 
 	serviceAddr := fmt.Sprintf("%s:%s", serviceHost, servicePort)
 	// with load balancer
-	// serviceAddr = fmt.Sprintf("%s:///%s", loadbalance.ShopResolverName, serviceAddr)
-	// serviceAddr = fmt.Sprintf("%s:///%s", "shops", serviceAddr)
+	serviceAddr = fmt.Sprintf("%s://%s", loadbalance.ShopResolverName, serviceAddr)
+
+	tlsConfig, err := config.SetupTLSConfig(&config.ConfigOpts{
+		Target: config.SHOP_CLIENT,
+		Addr:   serviceAddr,
+	})
+	if err != nil {
+		l.Error("error setting shops client TLS", zap.Error(err), zap.String("client", clientOpts.Caller))
+		return nil, err
+	}
+	tlsConfig.InsecureSkipVerify = true
+	tlsCreds := credentials.NewTLS(tlsConfig)
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(tlsCreds),
+	}
 
 	conn, err := grpc.Dial(serviceAddr, opts...)
 	if err != nil {
-		logger.Error("shop client failed to connect", zap.Error(err), zap.String("client", clientOpts.Caller))
+		l.Error("shop client failed to connect", zap.Error(err), zap.String("client", clientOpts.Caller))
 		return nil, err
 	}
 
 	client := api.NewShopsClient(conn)
-	logger.Info("shop client connected", zap.String("host", serviceHost), zap.String("port", servicePort))
+	l.Info("shop client connected", zap.String("host", serviceHost), zap.String("port", servicePort))
 	return &shopClient{
-		client: client,
-		logger: logger,
-		conn:   conn,
-		opts:   clientOpts,
+		client:    client,
+		AppLogger: l,
+		conn:      conn,
+		opts:      clientOpts,
 	}, nil
 }
 
@@ -116,7 +122,7 @@ func (sc *shopClient) AddShop(ctx context.Context, req *api.AddShopRequest, opts
 
 	resp, err := sc.client.AddShop(ctx, req)
 	if err != nil {
-		sc.logger.Error("error adding shop", zap.Error(err))
+		sc.Error("error adding shop", zap.Error(err))
 		return nil, err
 	}
 	return resp, nil
@@ -128,7 +134,7 @@ func (sc *shopClient) GetShop(ctx context.Context, req *api.GetShopRequest, opts
 
 	resp, err := sc.client.GetShop(ctx, req)
 	if err != nil {
-		sc.logger.Error("error getting shop", zap.Error(err))
+		sc.Error("error getting shop", zap.Error(err))
 		return nil, err
 	}
 	return resp, nil
@@ -140,7 +146,7 @@ func (sc *shopClient) DeleteShop(ctx context.Context, req *api.DeleteShopRequest
 
 	resp, err := sc.client.DeleteShop(ctx, req)
 	if err != nil {
-		sc.logger.Error("error deleting shop", zap.Error(err))
+		sc.Error("error deleting shop", zap.Error(err))
 		return nil, err
 	}
 	return resp, nil
@@ -152,7 +158,31 @@ func (sc *shopClient) GetShops(ctx context.Context, req *api.SearchShopsRequest,
 
 	resp, err := sc.client.SearchShops(ctx, req)
 	if err != nil {
-		sc.logger.Error("error getting shops", zap.Error(err))
+		sc.Error("error getting shops", zap.Error(err))
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (sc *shopClient) UpdateShop(ctx context.Context, req *api.UpdateShopRequest, opts ...grpc.CallOption) (*api.UpdateShopResponse, error) {
+	ctx, cancel := sc.contextWithOptions(ctx, sc.opts)
+	defer cancel()
+
+	resp, err := sc.client.UpdateShop(ctx, req)
+	if err != nil {
+		sc.Error("error updating shops", zap.Error(err))
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (sc *shopClient) GetServers(ctx context.Context, req *api.GetServersRequest, opts ...grpc.CallOption) (*api.GetServersResponse, error) {
+	ctx, cancel := sc.contextWithOptions(ctx, sc.opts)
+	defer cancel()
+
+	resp, err := sc.client.GetServers(ctx, req)
+	if err != nil {
+		sc.Error("error getting server list", zap.Error(err), zap.String("client", sc.opts.Caller))
 		return nil, err
 	}
 	return resp, nil
@@ -160,7 +190,7 @@ func (sc *shopClient) GetShops(ctx context.Context, req *api.SearchShopsRequest,
 
 func (sc *shopClient) Close() error {
 	if err := sc.conn.Close(); err != nil {
-		sc.logger.Error("error closing shop client connection", zap.Error(err))
+		sc.Error("error closing shop client connection", zap.Error(err))
 		return err
 	}
 	return nil

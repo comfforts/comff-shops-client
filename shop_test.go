@@ -20,7 +20,8 @@ func TestShopsClient(t *testing.T) {
 		t *testing.T,
 		gc Client,
 	){
-		"shop CRUD, succeeds": testShopCRUD,
+		"get servers, succeeds": testGetServers,
+		"shop CRUD, succeeds":   testShopCRUD,
 	} {
 		t.Run(scenario, func(t *testing.T) {
 			gc, teardown := setup(t, logger)
@@ -50,6 +51,16 @@ func setup(t *testing.T, logger logger.AppLogger) (
 	}
 }
 
+func testGetServers(t *testing.T, gc Client) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	resp, err := gc.GetServers(ctx, &api.GetServersRequest{})
+	require.NoError(t, err)
+	t.Log("resp", resp)
+	require.Equal(t, true, len(resp.Servers) > 0)
+}
+
 func testShopCRUD(t *testing.T, sc Client) {
 	t.Helper()
 	rqstr, storeId, name, org := "client-shop-create-test@gmail.com", 1, "Client Create Test", "client-create-test"
@@ -73,6 +84,18 @@ func testShopCRUD(t *testing.T, sc Client) {
 	require.Equal(t, storeId, int(aResp.Shop.StoreId))
 
 	gResp, err := sc.GetShop(ctx, &api.GetShopRequest{
+		Id: aResp.Shop.Id,
+	})
+	require.NoError(t, err)
+	require.Equal(t, aResp.Shop.Id, gResp.Shop.Id)
+
+	gResp, err = sc.GetShop(ctx, &api.GetShopRequest{
+		Id: aResp.Shop.Id,
+	})
+	require.NoError(t, err)
+	require.Equal(t, aResp.Shop.Id, gResp.Shop.Id)
+
+	gResp, err = sc.GetShop(ctx, &api.GetShopRequest{
 		Id: aResp.Shop.Id,
 	})
 	require.NoError(t, err)
